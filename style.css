@@ -11,8 +11,9 @@ p {
   font-family: Verdana, Geneva, Tahoma, sans-serif;
   text-transform: uppercase;
   color: rgb(0, 0, 0);
-	font-size: 20px;
-	-webkit-text-stroke-width: 1px;
+	font-size: 2.2rem;
+ 
+	-webkit-text-stroke-width: 1.5px;
     -webkit-text-stroke-color: black;
 }
 input[type="text"]{
@@ -53,7 +54,7 @@ input[type="text"]{
   
   background-color: aliceblue;
   margin: 150px auto;
-  border: 2px solid #092f61;
+  border: 2px solid #b7740d;
   border-radius: 15px;
   
 
