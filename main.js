@@ -14,7 +14,7 @@ import {
 // staging logic
 const searchInput = document.getElementById("searchBar");
 
-// staging visual world
+// staging the visual world
 const scene = new THREE.Scene();
 const winWidth = window.innerWidth;
 const winHeight = window.innerHeight;
@@ -36,12 +36,12 @@ document.querySelector("#sub").appendChild(renderer.domElement);
 const pointLight = new THREE.PointLight(0xa7713b);
 pointLight.position.set(5, 5, 5);
 
-const ambientLight = new THREE.AmbientLight("lightblue");
+const ambientLight = new THREE.AmbientLight("#b6fbeb");
 scene.add(pointLight, ambientLight);
 
 const groundGeo = new THREE.PlaneGeometry(300, 300);
 const groundMat = new THREE.MeshStandardMaterial({
-  color: "light blue",
+  color: "#546eed",
 });
 const background = new THREE.Mesh(groundGeo, groundMat);
 background.quaternion.setFromEuler(0, 0, -Math.PI / 2);
@@ -71,7 +71,9 @@ searchBoarderMesh.position.set(0, 19.5, 7.2);
 searchBoarderMesh.scale.set(0.45, 0.4);
 
 scene.add(searchBoarderMesh);
+
 // stage physics world
+// sync rigidbodies with objects where needed
 const world = new CANNON.World();
 world.gravity.set(0, -0.6, 0);
 world.broadphase = new CANNON.NaiveBroadphase();
@@ -98,13 +100,14 @@ groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
 groundMesh.position.copy(groundBody.position);
 groundMesh.quaternion.copy(groundBody.quaternion);
 
-// tools
-//const orbit = new OrbitControls(camera, renderer.domElement);
-//orbit.update();
-
+// debugging tools
+/*
+const orbit = new OrbitControls(camera, renderer.domElement);
+orbit.update();
+*/
 const cannonDebugger = new CannonDebugger(scene, world);
 
-// create box for bubbles
+// create container box for bubbles
 const leftWall = new CANNON.Body({
   shape: new CANNON.Box(new CANNON.Vec3(10, 25, 1)),
   type: CANNON.Body.STATIC,
@@ -165,11 +168,7 @@ world.addBody(boxCeiling);
 world.addBody(boxInsideWall);
 world.addBody(boxSlope);
 
-//
-//
-//
-//
-// sets up css labels for bubbles
+// setup css labels for bubbles
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize(window.innerWidth, window.innerHeight);
 labelRenderer.domElement.style.position = "absolute";
@@ -177,12 +176,7 @@ labelRenderer.domElement.style.top = "-13px"; // adjust based of fixed position 
 labelRenderer.domElement.style.textAlign = "center";
 labelRenderer.domElement.style.pointerEvents = "none";
 labelRenderer.domElement.style.scale = "95%";
-//document.body.appendChild( labelRenderer.domElement );
-//const canvasSelector = document.querySelector('#bg')
-//document.querySelector('#bg').appendChild(labelRenderer.domElement)
-//
-//
-//
+
 // searchinput and creates array of valid results
 const fruit = [
   "Apple",
@@ -273,6 +267,8 @@ let numObjects = 0;
 let previousInput;
 let input = "";
 let counter = 0;
+
+// helper function for removing existing bubbles 
 function timeOut() {
   if (input.length === 0) {
     searchResults = [];
@@ -291,12 +287,11 @@ function timeOut() {
 }
 setInterval(timeOut, 1500);
 
+// clears extra objects, bodies, and css elements to prevent lag
 function clearBubbles() {
   for (let i = 0; i < objects.length; i++) {
     scene.remove(objects[i]);
     world.removeBody(bodies[i]);
-    //objects[i].geometry.dispose();
-    //objects[i].material.dispose();
   }
 
   bodies = [];
@@ -311,10 +306,10 @@ function clearBubbles() {
 
 searchInput.addEventListener("input", (e) => {
   input = searchInput.value;
-  console.log(input);
   //bubbleGeneration(input)
 });
 
+// will interpret user input and appropiately call renderSuggestions
 function bubbleGeneration(input) {
   if (input === undefined) {
     // will allow for inital spawn of bubbles
@@ -329,12 +324,13 @@ function bubbleGeneration(input) {
   renderSuggestions(searchResults);
 }
 
+// filters userinput from fruitarray 
 function filterFruit(arrFromCheckFirstLetter, passedInput) {
   return arrFromCheckFirstLetter.filter(function (item) {
     return item.toLowerCase().includes(passedInput);
   });
 }
-
+// creates rigid bodies, object, and css elements for bubbles
 function renderSuggestions(arr) {
   let counter = 0;
 
@@ -342,7 +338,7 @@ function renderSuggestions(arr) {
   for (let i = 0; i < arr.length; i++) {
     bubbleCreator(i);
 
-    labelRenderer.scale = 80 % //
+    labelRenderer.scale = 80 % //fractional scale needed to prevent scene from being oversized(it is layered ontop of parent element)
     labelRenderer.domElement.classList.add("purge");
     document.querySelector("#sub").appendChild(labelRenderer.domElement);
 
@@ -354,11 +350,12 @@ function renderSuggestions(arr) {
 
     objects[i].add(bubbleLabel);
   }
-  //populate with empty bubbles
+  //populate with empty bubbles 
   for (let i = 0; i < 30 - arr.length; i++) {
     bubbleCreator(i);
   }
 }
+// helper function for renderSuggestions
 function bubbleCreator(i) {
   const texture = new THREE.TextureLoader().load("assets/bubble.png");
   // prevents texture from looking even more blurry
@@ -398,7 +395,7 @@ function bubbleCreator(i) {
   sprite.scale.set(6, 4, 6);
   objects[i].add(sprite);
 }
-
+//calls for inital generation 
 bubbleGeneration();
 
 //
@@ -413,6 +410,8 @@ function animate() {
   // Render the Three.js scene
   renderer.render(scene, camera);
 
+  //get each rigidbody location and rotation and sync with its same indexed object counterpart 
+  // css elements are attached to the object, so have the convenient consequence of syncing without need for another execution
   if (objects.length > 0) {
     for (let i = 0; i < objects.length; i++) {
       let posx = bodies[i].position.x;
@@ -430,12 +429,23 @@ function animate() {
   }
 }
 
-// Start the animation loop
+// initalize the animation loop
 animate();
 
+// keeps scene the same size of window
 window.addEventListener("resize", function () {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   labelRenderer.setSize(window.innerWidth - 2, window.innerHeight - 2);
 });
+
+
+/*
+notes
+
+consider making view orthographic to prevent css elements from moving as bubbles pan
+consider adding collision masks so that bubbles still collide with eachother, but not the box(so that removal can happen without bubbles phasing within eachtoher)
+fix searchbar background not sizing/positioning correctly with non 1440p 16:9 screens
+consider adding translucency to bubbles 
+*/
